@@ -1,16 +1,170 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import categoriesData from '../data/categories.json';
 
+const categories = Object.keys(categoriesData).map(key => ({
+  key,
+  label: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+  count: (categoriesData as any)[key].length,
+  items: (categoriesData as any)[key].map((i: any) => i.word)
+}));
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Imposter - Party Game">
+  <div class="w-full max-w-5xl space-y-8">
+    <header class="text-center space-y-2">
+      <h1 class="text-4xl font-bold tracking-tight text-white">Imposter</h1>
+      <p class="text-zinc-400">A game of deception and deduction.</p>
+    </header>
+
+    <div class="bubble p-6 space-y-6">
+      <div class="space-y-4">
+        <label class="flex items-center justify-between group cursor-pointer p-1">
+          <span class="font-medium text-zinc-200">Enable Hints</span>
+          <input type="checkbox" id="hints" class="w-5 h-5 rounded border-zinc-600 bg-zinc-800 text-white accent-white focus:ring-offset-zinc-900" />
+        </label>
+        
+        <div class="h-px bg-white/10"></div>
+        
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="font-medium text-zinc-200">Categories</span>
+            <button type="button" id="selectAll" class="text-xs text-zinc-500 hover:text-white transition-colors uppercase tracking-wider font-bold">Select All</button>
+          </div>
+          
+          <div class="flex flex-wrap justify-center gap-3">
+            {categories.map(cat => (
+              <div class="category-item group relative w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-0.75rem)]" data-key={cat.key}>
+                <label class="bubble p-4 flex items-center justify-between cursor-pointer border-transparent transition-all duration-300 hover:border-white/10 select-none h-full">
+                  <div class="flex items-center gap-3">
+                    <input type="checkbox" name="category" value={cat.key} class="w-5 h-5 rounded border-zinc-600 bg-zinc-800 text-white accent-white" checked />
+                    <div class="flex flex-col">
+                      <span class="text-sm font-bold text-zinc-300 group-has-[:checked]:text-white transition-colors">{cat.label}</span>
+                      <span class="text-[10px] text-zinc-500 font-medium uppercase tracking-tighter">{cat.count} Items</span>
+                    </div>
+                  </div>
+                  <button type="button" class="view-items-btn text-[10px] text-zinc-400 hover:text-white border border-white/10 hover:border-white/40 px-2 py-1 rounded transition-all uppercase tracking-widest font-bold ml-2" data-items={JSON.stringify(cat.items)} data-label={cat.label}>
+                    View
+                  </button>
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button id="createGame" class="btn-primary w-full shadow-xl shadow-white/5 font-bold uppercase tracking-widest text-sm py-4">
+        Create Game
+      </button>
+    </div>
+  </div>
+
+  <!-- Category Preview Modal -->
+  <dialog id="previewModal" class="backdrop:bg-black/90 bg-zinc-900 text-white p-6 rounded-2xl border border-white/10 shadow-2xl max-w-sm w-full m-auto open:animate-fade-in backdrop:open:animate-fade-in outline-none">
+    <div class="flex items-center justify-between mb-4">
+      <h3 id="previewTitle" class="text-xl font-bold"></h3>
+      <button onclick="document.getElementById('previewModal').close()" class="text-zinc-500 hover:text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div id="previewList" class="max-h-60 overflow-y-auto pr-2 flex flex-wrap gap-2 text-[10px]">
+      <!-- Items injected here -->
+    </div>
+  </dialog>
+</Layout>
+
+<style>
+  .category-item:has(:checked) .bubble {
+    border-color: var(--color-emerald-500);
+    background-color: rgba(16, 185, 129, 0.1); /* Emerald-500 with opacity */
+    box-shadow: 0 0 20px -5px rgba(16, 185, 129, 0.2);
+  }
+  
+  /* Fallback for browsers without :has support if needed, but Astro handles modern CSS well */
+  
+  /* Custom scrollbar for the modal */
+  #previewList::-webkit-scrollbar {
+    width: 4px;
+  }
+  #previewList::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #previewList::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 10px;
+  }
+</style>
+
+<script>
+  const createBtn = document.getElementById('createGame') as HTMLButtonElement;
+  const selectAllBtn = document.getElementById('selectAll');
+  const inputs = document.querySelectorAll('input[name="category"]') as NodeListOf<HTMLInputElement>;
+  
+  const modal = document.getElementById('previewModal') as HTMLDialogElement;
+  const previewTitle = document.getElementById('previewTitle');
+  const previewList = document.getElementById('previewList');
+  const viewBtns = document.querySelectorAll('.view-items-btn');
+
+  viewBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const items = JSON.parse((btn as HTMLElement).dataset.items || '[]');
+      const label = (btn as HTMLElement).dataset.label || '';
+      
+      if (previewTitle && previewList) {
+        previewTitle.textContent = label;
+        previewList.innerHTML = items.map((i: string) => `
+          <span class="bg-zinc-800 text-zinc-400 px-2 py-1 rounded border border-white/5 hover:border-white/10 transition-colors">${i}</span>
+        `).join('');
+        modal.showModal();
+      }
+    });
+  });
+
+  selectAllBtn?.addEventListener('click', () => {
+    inputs.forEach(input => input.checked = true);
+  });
+
+  createBtn?.addEventListener('click', async () => {
+    const hintsEnabled = (document.getElementById('hints') as HTMLInputElement).checked;
+    const selectedCategories = Array.from(inputs)
+      .filter(input => input.checked)
+      .map(input => input.value);
+
+    if (selectedCategories.length === 0) {
+      alert('Please select at least one category.');
+      return;
+    }
+
+    createBtn.textContent = 'Creating...';
+    createBtn.setAttribute('disabled', 'true');
+
+    try {
+      const res = await fetch('/api/game/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          config: {
+            categories: selectedCategories,
+            hintsEnabled
+          }
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        window.location.href = `/play/${data.code}`;
+      } else {
+        alert('Failed to create game.');
+        createBtn.textContent = 'Create Game';
+        createBtn.removeAttribute('disabled');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error creating game.');
+      createBtn.textContent = 'Create Game';
+      createBtn.removeAttribute('disabled');
+    }
+  });
+</script>

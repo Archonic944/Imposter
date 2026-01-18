@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bubble: rgba(255, 255, 255, 0.05);
+  --color-bubble-hover: rgba(255, 255, 255, 0.08);
+  --color-bubble-active: rgba(255, 255, 255, 0.12);
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans antialiased min-h-screen flex flex-col;
+  }
+}
+
+@layer components {
+  .bubble {
+    @apply bg-bubble hover:bg-bubble-hover transition-colors duration-200 
+           rounded-2xl border border-white/5 shadow-sm backdrop-blur-sm;
+  }
+  
+  .input-bubble {
+    @apply bg-bubble focus:bg-bubble-hover outline-none transition-all duration-200
+           rounded-xl border border-white/10 px-4 py-3 placeholder-white/30 text-lg w-full;
+  }
+
+  .btn-primary {
+    @apply bg-white text-zinc-950 hover:bg-zinc-200 font-medium rounded-xl px-6 py-3 
+           transition-colors shadow-lg active:opacity-90 duration-100;
+  }
+}
