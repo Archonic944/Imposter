@@ -40,6 +40,7 @@ export type PublicGameState = {
   }[];
   myPlayer?: Player; // Detailed info for the requester
   config: GameConfig;
+  category?: string; // The chosen category for this round
   nextGameCode?: string;
   starterId?: string;
 };

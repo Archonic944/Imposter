@@ -22,6 +22,7 @@ export const GET: APIRoute = async ({ params, cookies, locals }) => {
     code: game.code,
     status: game.status,
     config: game.config,
+    category: game.category,
     players: game.players.map(p => ({
       id: p.id, // Expose ID for starter check (safe-ish, but maybe hash it if super strict? Nah, party game)
       name: p.name,
