@@ -131,13 +131,13 @@ export class GameStore {
     return true;
   }
 
-  async startGame(code: string, hostId: string): Promise<GameState | null> {
+  async startGame(code: string, hostId: string): Promise<GameState | { error: string; status: number }> {
     const game = await this.getGame(code);
-    if (!game) return null;
-    if (game.hostId !== hostId) return null;
-    if (game.status !== 'lobby') return null;
+    if (!game) return { error: 'Game not found', status: 404 };
+    if (game.hostId !== hostId) return { error: 'Only host can start', status: 403 };
+    if (game.status !== 'lobby') return { error: 'Game already started', status: 400 };
     // Allow 2 players for testing, though 3 is better for gameplay
-    if (game.players.length < 2) return null; 
+    if (game.players.length < 2) return { error: 'Need at least 2 players', status: 400 }; 
 
     // 1. Pick Category
     const categoryKeys = game.config.categories.length > 0 
