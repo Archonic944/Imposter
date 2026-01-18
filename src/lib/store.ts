@@ -87,10 +87,8 @@ export class GameStore {
   async saveGame(game: GameState) {
     if (this.db) {
       try {
-        // We update created_at on save to keep active games alive? 
-        // Or strictly 3 hours from creation? Prompt says "older than 3 hours".
-        // Usually party games shouldn't last 3 hours. Let's stick to creation time for now.
-        await this.db.prepare('UPDATE games SET data = ? WHERE code = ?').bind(JSON.stringify(game), game.code).run();
+        // Update created_at to keep the game "alive" (resetting the 3h timer)
+        await this.db.prepare('UPDATE games SET data = ?, created_at = ? WHERE code = ?').bind(JSON.stringify(game), Date.now(), game.code).run();
       } catch (e) {
          console.error('D1 Save Error:', e);
          throw new Error('Failed to save game state');
